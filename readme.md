@@ -27,8 +27,11 @@ click build in vs2015
 ./client  127.0.0.1  9527
 ```
 
-ip address shown in server is ::ffff:127.0.0.1   
-ipv4 is changed to ipv6
+if you listen on ::0, ip address shown in server will be 
+```
+::ffff:127.0.0.1   
+```
+then ipv6 network connection is OK!
 
 
 
