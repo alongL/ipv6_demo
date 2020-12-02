@@ -45,6 +45,12 @@ int tcp_listen(const char *host, const char *service, const int listen_num = 5)
 			continue;
 		}
 
+		int ipv6only = 0;
+		if (setsockopt(listenfd, IPPROTO_IPV6, IPV6_V6ONLY, (char*)&ipv6only, sizeof(ipv6only)) != 0) {
+			cout << "set ipv6only failed!";
+			continue;
+		}
+
 		if (-1 == bind(listenfd, res->ai_addr, res->ai_addrlen))
 		{
 			cout << "bind error: " << strerror(errno) << endl;
@@ -101,6 +107,22 @@ int get_addrinfo(const struct sockaddr *addr, string &ip, uint16_t &port)
 	return 0;
 }
 
+inline std::string get_remote_addr(int sock) {
+	struct sockaddr_storage addr;
+	socklen_t len = sizeof(addr);
+
+	if (!getpeername(sock, (struct sockaddr *)&addr, &len)) {
+		char ipstr[NI_MAXHOST];
+
+		if (!getnameinfo((struct sockaddr *)&addr, len, ipstr, sizeof(ipstr),
+			nullptr, 0, NI_NUMERICHOST)) {
+			return ipstr;
+		}
+	}
+
+	return std::string();
+}
+
 int main(int argc, char *argv[])
 {
 	int listenfd, connfd;
@@ -109,9 +131,9 @@ int main(int argc, char *argv[])
 	time_t now;
 	char buff[128];
 
-	if (2 == argc) //Ö¸¶¨¶Ë¿Ú
+	if (2 == argc) //æŒ‡å®šç«¯å£
 		listenfd = tcp_listen(NULL, argv[1]);
-	else if (3 == argc) //Ö¸¶¨±¾µØIPºÍ¶Ë¿Ú
+	else if (3 == argc) //æŒ‡å®šæœ¬åœ°IPå’Œç«¯å£
 		listenfd = tcp_listen(argv[1], argv[2]);
 	else
 	{
@@ -133,6 +155,9 @@ int main(int argc, char *argv[])
 		uint16_t port = 0;
 		get_addrinfo((struct sockaddr*)&cliaddr, ip, port);
 		cout << "client " << ip << "|" << port << " login" << endl;
+
+		auto clientip = get_remote_addr(connfd);
+		cout << "clientip " << clientip << endl;
 
 		now = time(NULL);
 		snprintf(buff, sizeof(buff) - 1, "%.24s", ctime(&now));
